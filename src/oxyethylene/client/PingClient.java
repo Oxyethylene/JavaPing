@@ -10,11 +10,12 @@ public class PingClient {
         // 参数处理
         if (args.length < 2) {
             System.out.println("输入的参数过少。使用方法：PingClient host port");
+            System.exit(-1);
         }
         String host = args[0];
         int port = Integer.parseInt(args[1]);
         // 创建socket
-        try (DatagramSocket client = new DatagramSocket(1234, InetAddress.getByName(host))) {
+        try (DatagramSocket client = new DatagramSocket()) {
             System.out.println("ping " + host + ":" + port);
             long minTime = 1001;
             long maxTime = 0;
