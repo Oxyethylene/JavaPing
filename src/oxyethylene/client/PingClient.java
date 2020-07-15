@@ -37,10 +37,10 @@ public class PingClient {
                         return replyPacket;
                     }
                 };
-                ExecutorService executorService = Executors.newFixedThreadPool(1);
+                ExecutorService executorService = Executors.newSingleThreadExecutor();
                 Future<DatagramPacket> replyPacketFuture = executorService.submit(waitForReplyTask);
                 try {
-                    DatagramPacket replyPacket = replyPacketFuture.get(3, TimeUnit.SECONDS);
+                    DatagramPacket replyPacket = replyPacketFuture.get(1, TimeUnit.SECONDS);
                     long endTime = new Date().getTime();
                     long timeCost = endTime - startTime;
                     if (timeCost > maxTime) {
@@ -63,7 +63,7 @@ public class PingClient {
             System.out.println("10 packets transmitted, "
                     + (10 - lossCount) + " packets received, "
                     + (double) lossCount / 10.0 * 100 + "% packet loss");
-            System.out.println("round-trip min/avg/max/ = "
+            System.out.println("round-trip min/avg/max = "
                     + minTime + "/"
                     + (lossCount == 10 ? "" : (avgTime / (long) (10 - lossCount) + "/"))
                     + maxTime + " ms");
