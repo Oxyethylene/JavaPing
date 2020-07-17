@@ -6,6 +6,8 @@ import java.util.Date;
 import java.util.concurrent.*;
 
 public class PingClient {
+    static ExecutorService executorService = Executors.newSingleThreadExecutor();
+
     public static void main(String[] args) {
         // 参数处理
         if (args.length < 2) {
@@ -29,17 +31,14 @@ public class PingClient {
                         = new DatagramPacket(payload, payload.length, InetAddress.getByName(host), port);
                 client.send(requestPacket);
 
-                Callable<DatagramPacket> waitForReplyTask = new Callable<DatagramPacket>() {
-                    @Override
-                    public DatagramPacket call() throws Exception {
-                        byte[] buf = new byte[1024];
-                        DatagramPacket replyPacket = new DatagramPacket(buf, buf.length);
-                        client.receive(replyPacket);
-                        return replyPacket;
-                    }
-                };
-                ExecutorService executorService = Executors.newSingleThreadExecutor();
-                Future<DatagramPacket> replyPacketFuture = executorService.submit(waitForReplyTask);
+                // 接受请求与超时处理
+
+                Future<DatagramPacket> replyPacketFuture = executorService.submit(() -> {
+                    byte[] buf = new byte[1024];
+                    DatagramPacket replyPacket = new DatagramPacket(buf, buf.length);
+                    client.receive(replyPacket);
+                    return replyPacket;
+                });
                 try {
                     DatagramPacket replyPacket = replyPacketFuture.get(1, TimeUnit.SECONDS);
                     long endTime = new Date().getTime();
@@ -57,10 +56,9 @@ public class PingClient {
                 } catch (TimeoutException te) {
                     System.out.println("等待超时");
                     ++lossCount;
-                }finally {
-                    executorService.shutdownNow();
                 }
             } // for end here
+            executorService.shutdown();
             System.out.println("10 packets transmitted, "
                     + (10 - lossCount) + " packets received, "
                     + (double) lossCount / 10.0 * 100 + "% packet loss");
@@ -89,8 +87,8 @@ public class PingClient {
     private static byte[] buildPayload(int SequenceNumber, long TimeStamp) {
         String payload = "PingUDP "
                 + "HEAD:" + Thread.currentThread().getName()
-                + "SequenceNumber:" + SequenceNumber
-                + "TimeStamp:" + TimeStamp;
+                + " SequenceNumber:" + SequenceNumber
+                + " TimeStamp:" + TimeStamp;
         return payload.getBytes();
     }
 }

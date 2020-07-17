@@ -2,6 +2,7 @@ package oxyethylene.server;
 
 import java.io.IOException;
 import java.net.*;
+import java.util.Arrays;
 
 public class PingServer {
     private static DatagramSocket server;
@@ -48,7 +49,7 @@ public class PingServer {
         @Override
         public void run() {
             // 接收报文的处理
-            String payload = new String(receivedPacket.getData()).trim();
+            String payload = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
             int port = receivedPacket.getPort();
             InetAddress address = receivedPacket.getAddress();
             System.out.println("收到来自" + address.toString() + ":" + port + "的消息");
@@ -56,10 +57,13 @@ public class PingServer {
 
             // 模拟延迟
             long delay = (long) (Math.random() * MAX_DELAY);
+            String replyMessage = "reply to "
+                    + address.toString() + ":" + port + " "
+                    + "Delay is: " + delay + " "
+                    + payload.split(" ")[2];
             // 模拟数据丢失
             if (delay > 1000) {
-                System.out.println("回复数据丢失\n");
-                return;
+                System.out.println("回复数据丢失\n" + "Payload is: " + replyMessage);
             }
             try {
                 Thread.sleep(delay);
@@ -68,11 +72,11 @@ public class PingServer {
             }
 
             // 发送回复
-            byte[] replyPayload = ("reply to " + address.toString() + ":" + port).getBytes();
+            byte[] replyPayload = replyMessage.getBytes();
             DatagramPacket reply = new DatagramPacket(replyPayload, replyPayload.length, address, port);
             try {
                 server.send(reply);
-                System.out.println("已发送对" + address.toString() + ":" + port + "的回复\n");
+                System.out.println("已发送对" + address.toString() + ":" + port + "的回复\nPayload is: " + replyMessage + "\n");
             } catch (IOException ioe) {
                 System.out.println("发送回复时出现错误\n");
                 ioe.printStackTrace();
